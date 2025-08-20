@@ -1,1 +1,877 @@
-calendario_pruebas.html
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendario de Pruebas</title>
+    <!-- Incluir Tailwind CSS para un diseño moderno y responsivo -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Estilos personalizados para la tipografía y el fondo */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        /* Estilos para el contenedor de la tabla y los mensajes */
+        #content-container {
+            min-height: 200px;
+        }
+        /* Estilos para los botones */
+        .btn {
+            @apply px-4 py-2 font-semibold text-white rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md;
+        }
+        /* Estilos para el modal personalizado */
+        .modal {
+            display: none; /* Oculto por defecto */
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 2rem;
+            border-radius: 1rem;
+            width: 100%;
+            max-width: 600px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .close-btn {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close-btn:hover, .close-btn:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .calendar-day-cell {
+            min-height: 96px; /* 6rem */
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .calendar-day-cell:hover {
+            transform: scale(1.03);
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-4xl mx-auto bg-white p-6 md:p-10 rounded-xl shadow-lg">
+
+        <!-- Título de la aplicación -->
+        <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-6 text-center">
+            Calendario de Pruebas y Evaluaciones
+        </h1>
+
+        <!-- Contenedor para notificaciones -->
+        <div id="notification-container" class="mb-4"></div>
+
+        <!-- Formulario para agregar/editar una nueva entrada -->
+        <form id="schedule-form" class="space-y-6">
+            <input type="hidden" id="editIndex" value="-1">
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Campo para el Hermano (con datalist) -->
+                <div>
+                    <label for="hermano" class="block text-sm font-medium text-gray-700 mb-1">Hermano:</label>
+                    <input type="text" id="hermano" name="hermano" required list="hermano-list"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <datalist id="hermano-list"></datalist>
+                </div>
+
+                <!-- Campo para la Fecha -->
+                <div>
+                    <label for="fecha" class="block text-sm font-medium text-gray-700 mb-1">Fecha:</label>
+                    <input type="date" id="fecha" name="fecha" required
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Campo para el Día (se llenará automáticamente) -->
+                <div>
+                    <label for="dia" class="block text-sm font-medium text-gray-700 mb-1">Día:</label>
+                    <input type="text" id="dia" name="dia" readonly
+                           class="w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-500 cursor-not-allowed">
+                </div>
+
+                <!-- Campo para la Clasificación (Evaluación u Otro) -->
+                <div>
+                    <label for="clasificacion" class="block text-sm font-medium text-gray-700 mb-1">Clasificación:</label>
+                    <select id="clasificacion" name="clasificacion"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="Evaluacion">Evaluación</option>
+                        <option value="Otro">Otro</option>
+                    </select>
+                </div>
+
+                <!-- Campo para la Asignatura (lista de selección) -->
+                <div>
+                    <label for="asignatura" class="block text-sm font-medium text-gray-700 mb-1">Asignatura:</label>
+                    <select id="asignatura" name="asignatura"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="Matemáticas">Matemáticas</option>
+                        <option value="Lenguaje">Lenguaje</option>
+                        <option value="Ciencias Naturales">Ciencias Naturales</option>
+                        <option value="Ciencias Sociales">Ciencias Sociales</option>
+                        <option value="Historia">Historia</option>
+                        <option value="Inglés">Inglés</option>
+                        <option value="Educación Física">Educación Física</option>
+                        <option value="Arte">Arte</option>
+                        <option value="Tecnología">Tecnología</option>
+                        <option value="Música">Música</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Campo para las Notas u Observaciones -->
+            <div>
+                <label for="observaciones" class="block text-sm font-medium text-gray-700 mb-1">Notas u Observaciones:</label>
+                <textarea id="observaciones" name="observaciones" rows="3"
+                          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+            </div>
+
+            <!-- Botones de guardar y copiar datos del mes -->
+            <div class="flex flex-col md:flex-row items-center gap-4">
+                <button type="submit" id="submit-btn"
+                        class="btn bg-blue-600 hover:bg-blue-700 focus:ring-blue-500 focus:outline-none w-full md:w-auto md:flex-1">
+                    Guardar
+                </button>
+                <button type="button" id="copy-month-btn"
+                        class="btn bg-purple-600 hover:bg-purple-700 focus:ring-purple-500 focus:outline-none w-full md:w-auto md:flex-1">
+                    Copiar Datos del Mes
+                </button>
+            </div>
+        </form>
+
+        <hr class="my-8 border-gray-300">
+
+        <!-- Área de filtrado y exportación -->
+        <div class="mb-6 p-4 bg-gray-100 rounded-xl shadow-inner">
+            <h2 class="text-xl font-bold text-gray-800 mb-3">Filtrar y Exportar Pruebas</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                <!-- Filtro por Hermano -->
+                <div>
+                    <label for="filter-hermano" class="block text-sm font-medium text-gray-700 mb-1">Hermano:</label>
+                    <input type="text" id="filter-hermano" list="hermano-list"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                <!-- Filtro por Asignatura -->
+                <div>
+                    <label for="filter-asignatura" class="block text-sm font-medium text-gray-700 mb-1">Asignatura:</label>
+                    <input type="text" id="filter-asignatura" list="asignatura-list"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <datalist id="asignatura-list">
+                        <option value="Matemáticas">
+                        <option value="Lenguaje">
+                        <option value="Ciencias Naturales">
+                        <option value="Ciencias Sociales">
+                        <option value="Historia">
+                        <option value="Inglés">
+                        <option value="Educación Física">
+                        <option value="Arte">
+                        <option value="Tecnología">
+                        <option value="Música">
+                    </datalist>
+                </div>
+                 <!-- Filtro por Fecha de inicio -->
+                <div>
+                    <label for="filter-start-date" class="block text-sm font-medium text-gray-700 mb-1">Desde la fecha:</label>
+                    <input type="date" id="filter-start-date"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                <!-- Filtro por Fecha de fin -->
+                <div>
+                    <label for="filter-end-date" class="block text-sm font-medium text-gray-700 mb-1">Hasta la fecha:</label>
+                    <input type="date" id="filter-end-date"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+            </div>
+
+            <!-- Barra de búsqueda general y botones de acción -->
+            <div class="flex flex-col md:flex-row items-center gap-4">
+                <div class="w-full">
+                    <label for="filter-search-bar" class="block text-sm font-medium text-gray-700 mb-1">Búsqueda general:</label>
+                    <input type="text" id="filter-search-bar" placeholder="Buscar por palabra clave..."
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                <div class="md:self-end flex-shrink-0 flex gap-4 mt-4 md:mt-0">
+                    <button type="button" id="clear-filters-btn"
+                            class="btn bg-gray-500 hover:bg-gray-600 focus:ring-gray-400 focus:outline-none w-full md:w-auto">
+                        Limpiar Filtros
+                    </button>
+                    <button type="button" id="export-excel-btn"
+                            class="btn bg-green-600 hover:bg-green-700 focus:ring-green-500 focus:outline-none w-full md:w-auto">
+                        Exportar a Excel
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones para alternar la vista -->
+        <div class="flex justify-center gap-4 mt-6">
+            <button id="listViewBtn" class="btn">
+                Vista de Lista
+            </button>
+            <button id="calendarViewBtn" class="btn">
+                Vista de Calendario
+            </button>
+        </div>
+
+        <!-- Contenedor para la tabla del calendario -->
+        <div id="content-container" class="mt-8">
+            <!-- La tabla o el calendario se renderizarán aquí mediante JavaScript -->
+        </div>
+
+        <!-- Modal para seleccionar las entradas a copiar -->
+        <div id="copyModal" class="modal">
+            <div class="modal-content">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-800">Seleccionar Entradas a Copiar</h3>
+                    <span class="close-btn">&times;</span>
+                </div>
+                <p class="text-sm text-gray-600 mb-4">
+                    Selecciona las entradas del mes actual que quieres duplicar al próximo mes.
+                </p>
+                <div id="modal-entries-list" class="max-h-64 overflow-y-auto mb-4 p-2 border border-gray-300 rounded-lg">
+                    <!-- Las entradas con checkboxes se cargarán aquí -->
+                </div>
+                <div class="flex justify-end space-x-4">
+                    <button type="button" id="cancelCopyBtn" class="btn bg-red-500 hover:bg-red-600 focus:ring-red-400">
+                        Cancelar
+                    </button>
+                    <button type="button" id="confirmCopyBtn" class="btn bg-purple-600 hover:bg-purple-700 focus:ring-purple-500">
+                        Confirmar Copia
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Código JavaScript para la funcionalidad de la aplicación
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- 1. Referencias a los elementos del DOM ---
+            const form = document.getElementById('schedule-form');
+            const editIndexInput = document.getElementById('editIndex');
+            const submitBtn = document.getElementById('submit-btn');
+            const copyMonthBtn = document.getElementById('copy-month-btn');
+            const fechaInput = document.getElementById('fecha');
+            const diaInput = document.getElementById('dia');
+            const contentContainer = document.getElementById('content-container');
+            const hermanoDatalist = document.getElementById('hermano-list');
+            const filterHermanoInput = document.getElementById('filter-hermano');
+            const filterAsignaturaInput = document.getElementById('filter-asignatura');
+            const filterStartDateInput = document.getElementById('filter-start-date');
+            const filterEndDateInput = document.getElementById('filter-end-date');
+            const filterSearchBar = document.getElementById('filter-search-bar');
+            const clearFiltersBtn = document.getElementById('clear-filters-btn');
+            const exportExcelBtn = document.getElementById('export-excel-btn');
+            const notificationContainer = document.getElementById('notification-container');
+            const listViewBtn = document.getElementById('listViewBtn');
+            const calendarViewBtn = document.getElementById('calendarViewBtn');
+            const copyModal = document.getElementById('copyModal');
+            const modalEntriesList = document.getElementById('modal-entries-list');
+            const closeBtn = copyModal.querySelector('.close-btn');
+            const cancelCopyBtn = document.getElementById('cancelCopyBtn');
+            const confirmCopyBtn = document.getElementById('confirmCopyBtn');
+
+            let scheduleData = []; // Array para almacenar los datos
+            let hermanosList = new Set(); // Conjunto para almacenar nombres de hermanos únicos
+            let currentView = 'list'; // Vista por defecto
+            let currentCalendarDate = new Date(); // Para la navegación del calendario
+
+            // --- 2. Funciones de ayuda ---
+
+            // Función para obtener el día de la semana en español
+            const getDayOfWeek = (dateString) => {
+                if (!dateString) return '';
+                const date = new Date(dateString + 'T00:00:00');
+                const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+                return days[date.getDay()];
+            };
+
+            // Función para renderizar el datalist de hermanos
+            const renderHermanosDatalist = () => {
+                hermanoDatalist.innerHTML = '';
+                hermanosList.forEach(hermano => {
+                    const option = document.createElement('option');
+                    option.value = hermano;
+                    hermanoDatalist.appendChild(option);
+                });
+            };
+
+            // Función para renderizar la vista de lista (tabla)
+            const renderList = (dataToRender = scheduleData) => {
+                contentContainer.innerHTML = '';
+                if (dataToRender.length === 0) {
+                    contentContainer.innerHTML = `
+                        <div class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 rounded-lg">
+                            <p class="font-bold">¡Nada agendado!</p>
+                            <p>Usa el formulario de arriba para agregar una prueba o ajusta tus filtros.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const tableHtml = `
+                    <div class="overflow-x-auto rounded-xl shadow-md">
+                        <table class="min-w-full bg-white rounded-xl">
+                            <thead class="bg-gray-200 text-gray-600 text-sm md:text-base">
+                                <tr class="border-b border-gray-300">
+                                    <th class="px-3 py-2 md:px-6 md:py-3 text-left">Hermano</th>
+                                    <th class="px-3 py-2 md:px-6 md:py-3 text-left">Fecha</th>
+                                    <th class="px-3 py-2 md:px-6 md:py-3 text-left">Día</th>
+                                    <th class="px-3 py-2 md:px-6 md:py-3 text-left">Clasificación</th>
+                                    <th class="px-3 py-2 md:px-6 md:py-3 text-left">Asignatura</th>
+                                    <th class="px-3 py-2 md:px-6 md:py-3 text-left">Notas u Obs.</th>
+                                    <th class="px-3 py-2 md:px-6 md:py-3 text-left">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="schedule-body" class="text-sm md:text-base divide-y divide-gray-200">
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                contentContainer.innerHTML = tableHtml;
+
+                const scheduleBody = document.getElementById('schedule-body');
+                dataToRender.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+
+                dataToRender.forEach((item, index) => {
+                    const originalIndex = scheduleData.findIndex(d => d.hermano === item.hermano && d.fecha === item.fecha && d.asignatura === item.asignatura);
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="px-3 py-2 md:px-6 md:py-3 whitespace-nowrap">${item.hermano}</td>
+                        <td class="px-3 py-2 md:px-6 md:py-3 whitespace-nowrap">${item.fecha}</td>
+                        <td class="px-3 py-2 md:px-6 md:py-3 whitespace-nowrap">${item.dia}</td>
+                        <td class="px-3 py-2 md:px-6 md:py-3 whitespace-nowrap">${item.clasificacion}</td>
+                        <td class="px-3 py-2 md:px-6 md:py-3 whitespace-nowrap">${item.asignatura}</td>
+                        <td class="px-3 py-2 md:px-6 md:py-3">${item.observaciones.replace(/\n/g, '<br>')}</td>
+                        <td class="px-3 py-2 md:px-6 md:py-3 flex space-x-2 whitespace-nowrap">
+                            <button data-index="${originalIndex}" class="edit-btn text-blue-600 hover:text-blue-800 transition-colors">
+                                Editar
+                            </button>
+                            <button data-index="${originalIndex}" class="delete-btn text-red-600 hover:text-red-800 transition-colors">
+                                Eliminar
+                            </button>
+                        </td>
+                    `;
+                    scheduleBody.appendChild(row);
+                });
+
+                document.querySelectorAll('.edit-btn').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const index = e.target.getAttribute('data-index');
+                        editEntry(index);
+                    });
+                });
+
+                document.querySelectorAll('.delete-btn').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const index = e.target.getAttribute('data-index');
+                        deleteEntry(index);
+                    });
+                });
+            };
+
+            // Función para renderizar la vista de calendario
+            const renderCalendar = (date = new Date(), dataToRender = scheduleData) => {
+                contentContainer.innerHTML = '';
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const currentMonth = date.getMonth();
+                const currentYear = date.getFullYear();
+                
+                const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+                const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+
+                // Obtener el primer día del mes y el número total de días
+                const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
+                const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+                let calendarHtml = `
+                    <div class="flex justify-between items-center mb-4">
+                        <button id="prevMonthBtn" class="btn bg-gray-500 hover:bg-gray-600 focus:ring-gray-400">&lt;</button>
+                        <h2 class="text-2xl font-bold text-center text-gray-800">${monthNames[currentMonth]} ${currentYear}</h2>
+                        <button id="nextMonthBtn" class="btn bg-gray-500 hover:bg-gray-600 focus:ring-gray-400">&gt;</button>
+                    </div>
+                    <div class="grid grid-cols-7 gap-1 text-center font-semibold text-gray-700 mb-2">
+                        ${dayNames.map(day => `<div class="p-2">${day}</div>`).join('')}
+                    </div>
+                    <div class="grid grid-cols-7 gap-1">
+                `;
+
+                // Espacios vacíos para los días antes del primer día del mes
+                for (let i = 0; i < firstDayOfMonth; i++) {
+                    calendarHtml += `<div class="p-2 calendar-day-cell bg-gray-200 rounded-lg"></div>`;
+                }
+
+                // Días del mes con sus eventos
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const formattedDate = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    const dailyEvents = dataToRender.filter(item => item.fecha === formattedDate);
+                    const isToday = today.getDate() === day && today.getMonth() === currentMonth && today.getFullYear() === currentYear;
+
+                    calendarHtml += `
+                        <div class="p-2 calendar-day-cell bg-gray-100 border border-gray-300 rounded-lg overflow-y-auto ${isToday ? 'bg-yellow-200 border-yellow-500' : ''}" data-date="${formattedDate}">
+                            <div class="text-xs font-bold ${isToday ? 'text-blue-800' : 'text-gray-600'}">${day}</div>
+                            ${dailyEvents.map(event => `
+                                <div class="text-xs mt-1 p-1 bg-blue-200 text-blue-800 rounded-md truncate" title="${event.hermano} - ${event.asignatura}">
+                                    ${event.hermano.slice(0, 1)} - ${event.asignatura}
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+
+                calendarHtml += `</div>`;
+                contentContainer.innerHTML = calendarHtml;
+
+                // Añadir event listeners para la navegación
+                document.getElementById('prevMonthBtn').addEventListener('click', () => {
+                    currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+                    renderView();
+                });
+                document.getElementById('nextMonthBtn').addEventListener('click', () => {
+                    currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+                    renderView();
+                });
+                
+                // Añadir event listeners para el zoom del día
+                document.querySelectorAll('.calendar-day-cell').forEach(cell => {
+                    const cellDate = cell.getAttribute('data-date');
+                    if (cellDate) {
+                        cell.addEventListener('click', () => {
+                            renderDayView(cellDate);
+                        });
+                    }
+                });
+            };
+
+            // Función para renderizar la vista de un día específico
+            const renderDayView = (dateString) => {
+                const dayEvents = scheduleData.filter(item => item.fecha === dateString);
+                
+                let dayHtml = `
+                    <div class="flex justify-between items-center mb-4">
+                        <button id="backToCalendarBtn" class="btn bg-gray-500 hover:bg-gray-600 focus:ring-gray-400">
+                            Regresar a la vista mensual
+                        </button>
+                        <h2 class="text-2xl font-bold text-gray-800">${dateString} - ${getDayOfWeek(dateString)}</h2>
+                    </div>
+                `;
+                
+                if (dayEvents.length === 0) {
+                     dayHtml += `
+                        <div class="bg-gray-100 p-4 rounded-lg">
+                            <p class="text-gray-600">No hay pruebas agendadas para este día.</p>
+                        </div>
+                    `;
+                } else {
+                    dayHtml += `<div class="space-y-4">`;
+                    dayEvents.forEach(item => {
+                        const originalIndex = scheduleData.findIndex(d => d.hermano === item.hermano && d.fecha === item.fecha && d.asignatura === item.asignatura);
+                        dayHtml += `
+                            <div class="bg-white p-4 rounded-xl shadow-md border-l-4 border-blue-500">
+                                <p class="text-lg font-bold text-gray-800">${item.hermano}</p>
+                                <p class="text-sm text-gray-600">Clasificación: ${item.clasificacion}</p>
+                                <p class="text-sm text-gray-600">Asignatura: ${item.asignatura}</p>
+                                <p class="mt-2 text-gray-700 font-medium">Notas/Obs:</p>
+                                <p class="text-sm text-gray-600">${item.observaciones.replace(/\n/g, '<br>')}</p>
+                                <div class="mt-4 flex space-x-2">
+                                    <button data-index="${originalIndex}" class="edit-btn text-blue-600 hover:text-blue-800 transition-colors">
+                                        Editar
+                                    </button>
+                                    <button data-index="${originalIndex}" class="delete-btn text-red-600 hover:text-red-800 transition-colors">
+                                        Eliminar
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    dayHtml += `</div>`;
+                }
+                
+                contentContainer.innerHTML = dayHtml;
+                
+                document.getElementById('backToCalendarBtn').addEventListener('click', () => {
+                    renderView();
+                });
+
+                document.querySelectorAll('.edit-btn').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const index = e.target.getAttribute('data-index');
+                        editEntry(index);
+                    });
+                });
+
+                document.querySelectorAll('.delete-btn').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const index = e.target.getAttribute('data-index');
+                        deleteEntry(index);
+                    });
+                });
+            };
+
+            // Función para renderizar la vista actual (lista, calendario o día)
+            const renderView = () => {
+                const filterHermano = filterHermanoInput.value.toLowerCase().trim();
+                const filterAsignatura = filterAsignaturaInput.value.toLowerCase().trim();
+                const filterStartDate = filterStartDateInput.value;
+                const filterEndDate = filterEndDateInput.value;
+                const filterSearchBarValue = filterSearchBar.value.toLowerCase().trim();
+
+                const filteredData = scheduleData.filter(item => {
+                    const matchesHermano = filterHermano === '' || item.hermano.toLowerCase().includes(filterHermano);
+                    const matchesAsignatura = filterAsignatura === '' || item.asignatura.toLowerCase().includes(filterAsignatura);
+                    const matchesDateRange = (!filterStartDate || item.fecha >= filterStartDate) && (!filterEndDate || item.fecha <= filterEndDate);
+                    const matchesSearch = filterSearchBarValue === '' || Object.values(item).some(value => {
+                        return String(value).toLowerCase().includes(filterSearchBarValue);
+                    });
+                    return matchesHermano && matchesAsignatura && matchesDateRange && matchesSearch;
+                });
+                
+                // Actualizar las clases de los botones de vista antes de renderizar
+                if (currentView === 'list') {
+                    listViewBtn.classList.add('bg-blue-600', 'hover:bg-blue-700', 'focus:ring-blue-500');
+                    listViewBtn.classList.remove('bg-gray-400', 'hover:bg-gray-500', 'focus:ring-gray-300');
+                    calendarViewBtn.classList.add('bg-gray-400', 'hover:bg-gray-500', 'focus:ring-gray-300');
+                    calendarViewBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700', 'focus:ring-blue-500');
+                    renderList(filteredData);
+                } else {
+                    calendarViewBtn.classList.add('bg-blue-600', 'hover:bg-blue-700', 'focus:ring-blue-500');
+                    calendarViewBtn.classList.remove('bg-gray-400', 'hover:bg-gray-500', 'focus:ring-gray-300');
+                    listViewBtn.classList.add('bg-gray-400', 'hover:bg-gray-500', 'focus:ring-gray-300');
+                    listViewBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700', 'focus:ring-blue-500');
+                    renderCalendar(currentCalendarDate, filteredData);
+                }
+            };
+
+            // Función para guardar los datos en localStorage
+            const saveData = () => {
+                try {
+                    localStorage.setItem('childSchedule', JSON.stringify(scheduleData));
+                    localStorage.setItem('hermanosList', JSON.stringify(Array.from(hermanosList)));
+                    localStorage.setItem('currentView', currentView);
+                } catch (e) {
+                    console.error('Error al guardar en localStorage', e);
+                }
+            };
+
+            // Función para cargar los datos de localStorage
+            const loadData = () => {
+                try {
+                    const storedData = localStorage.getItem('childSchedule');
+                    const storedHermanos = localStorage.getItem('hermanosList');
+                    const storedView = localStorage.getItem('currentView');
+
+                    if (storedData) {
+                        scheduleData = JSON.parse(storedData);
+                    }
+                    if (storedHermanos) {
+                        const loadedHermanos = JSON.parse(storedHermanos);
+                        hermanosList = new Set(loadedHermanos);
+                    }
+                    if (storedView) {
+                        currentView = storedView;
+                    }
+                    renderHermanosDatalist();
+                    renderView();
+                    checkForUpcomingAlerts();
+                } catch (e) {
+                    console.error('Error al cargar datos de localStorage', e);
+                }
+            };
+
+            // Función para chequear las alertas próximas y mostrarlas
+            const checkForUpcomingAlerts = () => {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                const upcomingEvents = scheduleData.filter(item => {
+                    const eventDate = new Date(item.fecha + 'T00:00:00');
+                    const diffTime = eventDate.getTime() - today.getTime();
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    return diffDays >= 0 && diffDays <= 2;
+                });
+                
+                // Ordenar por nombre de hermano y luego por fecha
+                upcomingEvents.sort((a, b) => {
+                    if (a.hermano < b.hermano) return -1;
+                    if (a.hermano > b.hermano) return 1;
+                    return new Date(a.fecha) - new Date(b.fecha);
+                });
+
+                notificationContainer.innerHTML = '';
+                if (upcomingEvents.length > 0) {
+                    const alertHtml = `
+                        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg flex justify-between items-center shadow-md">
+                            <div>
+                                <p class="font-bold">¡Pruebas Próximas!</p>
+                                <ul class="list-disc list-inside mt-1">
+                                    ${upcomingEvents.map(event => {
+                                        const eventDate = new Date(event.fecha + 'T00:00:00');
+                                        const diffTime = eventDate.getTime() - today.getTime();
+                                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                                        let daysMessage = '';
+                                        if (diffDays === 0) {
+                                            daysMessage = 'Hoy';
+                                        } else if (diffDays === 1) {
+                                            daysMessage = 'Mañana';
+                                        } else {
+                                            daysMessage = `Quedan ${diffDays} días`;
+                                        }
+                                        return `<li>${event.hermano} tiene ${event.clasificacion.toLowerCase()} de ${event.asignatura} el ${event.dia}. **${daysMessage}**.</li>`;
+                                    }).join('')}
+                                </ul>
+                            </div>
+                            <button class="text-red-500 hover:text-red-700 font-bold text-xl ml-4" onclick="this.parentElement.style.display='none';">&times;</button>
+                        </div>
+                    `;
+                    notificationContainer.innerHTML = alertHtml;
+                }
+            };
+
+            // Función para eliminar una entrada
+            const deleteEntry = (index) => {
+                scheduleData.splice(index, 1);
+                saveData();
+                renderView();
+                checkForUpcomingAlerts();
+            };
+
+            // Función para editar una entrada
+            const editEntry = (index) => {
+                const item = scheduleData[index];
+                document.getElementById('hermano').value = item.hermano;
+                document.getElementById('fecha').value = item.fecha;
+                document.getElementById('dia').value = item.dia;
+                document.getElementById('clasificacion').value = item.clasificacion;
+                document.getElementById('asignatura').value = item.asignatura;
+                document.getElementById('observaciones').value = item.observaciones;
+                editIndexInput.value = index;
+                submitBtn.textContent = 'Actualizar Prueba';
+            };
+
+            // Función para exportar los datos a CSV
+            const exportToCsv = () => {
+                if (scheduleData.length === 0) {
+                    alert('No hay datos para exportar.');
+                    return;
+                }
+
+                let csvContent = "data:text/csv;charset=utf-8,";
+                
+                // Encabezados
+                const headers = ["Hermano", "Fecha", "Dia", "Clasificacion", "Asignatura", "Notas u Observaciones"];
+                csvContent += headers.join(",") + "\r\n";
+
+                // Datos
+                scheduleData.forEach(item => {
+                    const row = [
+                        `"${item.hermano.replace(/"/g, '""')}"`,
+                        `"${item.fecha.replace(/"/g, '""')}"`,
+                        `"${item.dia.replace(/"/g, '""')}"`,
+                        `"${item.clasificacion.replace(/"/g, '""')}"`,
+                        `"${item.asignatura.replace(/"/g, '""')}"`,
+                        `"${item.observaciones.replace(/"/g, '""').replace(/\n/g, ' ')}"`
+                    ];
+                    csvContent += row.join(",") + "\r\n";
+                });
+
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", "calendario_pruebas.csv");
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            };
+
+            // Función para mostrar el modal de selección de entradas
+            const showCopyModal = () => {
+                const now = new Date();
+                const currentMonth = now.getMonth();
+                const currentYear = now.getFullYear();
+
+                const entriesToCopy = scheduleData.filter(item => {
+                    const itemDate = new Date(item.fecha + 'T00:00:00');
+                    return itemDate.getMonth() === currentMonth && itemDate.getFullYear() === currentYear;
+                });
+
+                if (entriesToCopy.length === 0) {
+                    alert('No hay datos para el mes actual para copiar.');
+                    return;
+                }
+                
+                modalEntriesList.innerHTML = '';
+                
+                entriesToCopy.forEach((item, index) => {
+                    const entryDiv = document.createElement('div');
+                    entryDiv.className = 'flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer';
+                    
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.value = index;
+                    checkbox.checked = true;
+                    checkbox.className = 'form-checkbox h-4 w-4 text-purple-600 rounded';
+                    
+                    const label = document.createElement('label');
+                    label.textContent = `${item.hermano} - ${item.asignatura} (${item.fecha})`;
+                    label.className = 'text-gray-700 text-sm flex-1';
+                    
+                    entryDiv.appendChild(checkbox);
+                    entryDiv.appendChild(label);
+                    modalEntriesList.appendChild(entryDiv);
+                    
+                    entryDiv.addEventListener('click', () => checkbox.checked = !checkbox.checked);
+                });
+
+                copyModal.style.display = 'flex';
+            };
+
+            // Función para copiar las entradas seleccionadas del modal
+            const copySelectedData = () => {
+                const checkboxes = modalEntriesList.querySelectorAll('input[type="checkbox"]:checked');
+                if (checkboxes.length === 0) {
+                    alert('Por favor, selecciona al menos una entrada para copiar.');
+                    return;
+                }
+
+                const now = new Date();
+                const currentMonth = now.getMonth();
+                const currentYear = now.getFullYear();
+                
+                const entriesToCopy = scheduleData.filter(item => {
+                    const itemDate = new Date(item.fecha + 'T00:00:00');
+                    return itemDate.getMonth() === currentMonth && itemDate.getFullYear() === currentYear;
+                });
+
+                checkboxes.forEach(checkbox => {
+                    const index = checkbox.value;
+                    const item = entriesToCopy[index];
+                    
+                    const oldDate = new Date(item.fecha + 'T00:00:00');
+                    const newDate = new Date(oldDate);
+                    newDate.setMonth(newDate.getMonth() + 1);
+
+                    const newEntry = {
+                        ...item,
+                        fecha: newDate.toISOString().slice(0, 10),
+                        dia: getDayOfWeek(newDate.toISOString().slice(0, 10))
+                    };
+                    scheduleData.push(newEntry);
+                });
+
+                saveData();
+                renderView();
+                copyModal.style.display = 'none';
+                alert(`¡${checkboxes.length} entradas han sido copiadas al próximo mes!`);
+            };
+
+
+            // --- 3. Escuchadores de eventos ---
+
+            fechaInput.addEventListener('change', (e) => {
+                if (e.target.value) {
+                    diaInput.value = getDayOfWeek(e.target.value);
+                } else {
+                    diaInput.value = '';
+                }
+            });
+
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+
+                const newEntry = {
+                    hermano: document.getElementById('hermano').value,
+                    fecha: document.getElementById('fecha').value,
+                    dia: getDayOfWeek(document.getElementById('fecha').value),
+                    clasificacion: document.getElementById('clasificacion').value,
+                    asignatura: document.getElementById('asignatura').value,
+                    observaciones: document.getElementById('observaciones').value.trim()
+                };
+
+                const editIndex = editIndexInput.value;
+                if (editIndex > -1) {
+                    scheduleData[editIndex] = newEntry;
+                    editIndexInput.value = '-1';
+                    submitBtn.textContent = 'Guardar';
+                } else {
+                    scheduleData.push(newEntry);
+                }
+
+                hermanosList.add(newEntry.hermano);
+                renderHermanosDatalist();
+
+                saveData();
+                renderView();
+                checkForUpcomingAlerts();
+
+                form.reset();
+                diaInput.value = '';
+            });
+
+            // Escuchadores de eventos para los filtros
+            filterHermanoInput.addEventListener('input', renderView);
+            filterAsignaturaInput.addEventListener('input', renderView);
+            filterStartDateInput.addEventListener('change', renderView);
+            filterEndDateInput.addEventListener('change', renderView);
+            filterSearchBar.addEventListener('input', renderView);
+            clearFiltersBtn.addEventListener('click', () => {
+                filterHermanoInput.value = '';
+                filterAsignaturaInput.value = '';
+                filterStartDateInput.value = '';
+                filterEndDateInput.value = '';
+                filterSearchBar.value = '';
+                renderView();
+            });
+
+            // Escuchadores de eventos para los nuevos botones
+            exportExcelBtn.addEventListener('click', exportToCsv);
+            copyMonthBtn.addEventListener('click', showCopyModal);
+            confirmCopyBtn.addEventListener('click', copySelectedData);
+            cancelCopyBtn.addEventListener('click', () => copyModal.style.display = 'none');
+            closeBtn.addEventListener('click', () => copyModal.style.display = 'none');
+            window.addEventListener('click', (event) => {
+                if (event.target === copyModal) {
+                    copyModal.style.display = 'none';
+                }
+            });
+
+            // Botones de vista
+            listViewBtn.addEventListener('click', () => {
+                currentView = 'list';
+                saveData();
+                renderView();
+            });
+
+            calendarViewBtn.addEventListener('click', () => {
+                currentView = 'calendar';
+                saveData();
+                renderView();
+            });
+
+            // --- 4. Cargar datos al iniciar la página ---
+            loadData();
+        });
+    </script>
+</body>
+</html>
